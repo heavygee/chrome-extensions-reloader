@@ -35,5 +35,5 @@
 		"default_icon": "icon19.png",
 		"default_title": "Reload Extensions"
 	},
-	"description": "Reload all unpacked extensions using the extension's toolbar button or by browsing to \"http://reload.extensions\""
+	"description": "Reload unpacked extensions (specific extension or all) using the extension's toolbar button or by browsing to \"http://reload.extensions\""
 }

@@ -2,30 +2,54 @@
   const RELOAD_TRIGGER_HOSTNAME = 'reload.extensions';
 
 
-function reloadExtensions() {
-    
-  // find all unpacked extensions and reload them
-  chrome.management.getAll(async function (extensions) {
-    for (const ext of extensions) {
-      if ((ext.installType === 'development') &&
-          (ext.enabled === true) &&
-          (ext.name !== 'Extensions Reloader')) {
+async function reloadExtensions() {
 
-        const extensionId = ext.id;
-        const extensionType = ext.type;
+  // Check if a specific extension is selected
+  const storageData = await chrome.storage.sync.get('selectedExtension');
+  const selectedExtensionId = storageData.selectedExtension || '';
 
-        await chrome.management.setEnabled(extensionId, false);
-        await chrome.management.setEnabled(extensionId, true);
+  if (selectedExtensionId) {
+    // Reload only the selected extension
+    try {
+      const ext = await chrome.management.get(selectedExtensionId);
+      if (ext && ext.installType === 'development' && ext.enabled === true && ext.name !== 'Extensions Reloader') {
+        await chrome.management.setEnabled(selectedExtensionId, false);
+        await chrome.management.setEnabled(selectedExtensionId, true);
 
         // re-launch packaged app
-        if (extensionType === 'packaged_app') {
-          chrome.management.launchApp(extensionId);
+        if (ext.type === 'packaged_app') {
+          chrome.management.launchApp(selectedExtensionId);
         }
 
         console.log(ext.name + ' reloaded');
       }
+    } catch (error) {
+      console.error('Error reloading extension:', error);
     }
-  });
+  } else {
+    // find all unpacked extensions and reload them (original behavior)
+    chrome.management.getAll(async function (extensions) {
+      for (const ext of extensions) {
+        if ((ext.installType === 'development') &&
+            (ext.enabled === true) &&
+            (ext.name !== 'Extensions Reloader')) {
+
+          const extensionId = ext.id;
+          const extensionType = ext.type;
+
+          await chrome.management.setEnabled(extensionId, false);
+          await chrome.management.setEnabled(extensionId, true);
+
+          // re-launch packaged app
+          if (extensionType === 'packaged_app') {
+            chrome.management.launchApp(extensionId);
+          }
+
+          console.log(ext.name + ' reloaded');
+        }
+      }
+    });
+  }
 
   // Reload the current tab based on option value
   chrome.storage.sync.get('reloadPage', async function (item) {
